@@ -14,7 +14,7 @@ library(pacman)
 
 p_load(dplyr, lmerTest, ggplot2, stringr, plyr, caret, modelr, tidyverse, MASS, simr, MuMIn, cvTools, hydroGOF, lsr, pastecs, crqa, dostats, readr, stats, pROC, groupdata2, knitr, gridExtra)
 
-file1 = read.csv("Study1_G3_T3_Synchronous.csv")
+file1 = read.csv("Study1_G1_T1_Synchronous.csv")
 
 ```
 
@@ -62,7 +62,8 @@ resp_plot = grid.arrange(rplot1, rplot2, ncol = 2)
 
 #downsampling
 d1 = file1%>% 
-  group(n= 100, method= 'greedy') %>%       dplyr::summarise(time= mean(time,na.rm=T),HR1 = mean(HR1,na.rm=T),HR2 = mean(HR2,na.rm=T),Resp1 = mean(Resp1,na.rm=T),Resp2 = mean(Resp2,na.rm=T))
+  group(n= 100, method= 'greedy') %>%       
+  dplyr::summarise(time= mean(time,na.rm=T),HR1 = mean(HR1,na.rm=T),HR2 = mean(HR2,na.rm=T),Resp1 = mean(Resp1,na.rm=T),Resp2 = mean(Resp2,na.rm=T))
 
 
 #outliers removal
@@ -73,6 +74,7 @@ removeOuts = function(ts,threshold){
      (threshold*sd(ts,na.rm=T)))] = 
 mean(ts, na.rm=T)
 return(ts)}
+
 threshold=2.5
 d$HR1 = removeOuts(d$HR1,threshold)
 
@@ -112,10 +114,131 @@ col_HR_plot = ggplot(d1, aes(time, HR1)) + geom_line ()+
 col_HR_plot
 
 
+# - Can you eye-ball which condition if any displays more physiological coordination?
+
+
+
+
+
+#Running CRQA on respiration
+
+#Finding the optimal parameters: run on all pairs:
+
+#list you ned for optimizeparam function
+par = list(lgM =  20, steps = seq(1, 6, 1),  radiusspan = 100,  radiussample = 40, normalize = 0,  rescale = 0,  mindiagline = 2,  minvertline = 2,  tw = 0,  whiteline = FALSE,  recpt = FALSE,  fnnpercent = 10,  typeami = "mindip")
+
+#get parameters for rqa
+ans = optimizeParam(d1$Resp1, d1$Resp2, par, min.rec = 3.5, max.rec = 4.5)
+ans
+
+#try() --> selvom den ikke får en værdi så looper den videre/crasher ikke
+
+#Choose a common value for delay, emb.dim and radius
+#File has to be imported twise since crqa plot compares two timeseries
+Results=crqa (d1$Resp1, d1$Resp2, delay=26, embed=7, radius=25.47183,normalize=0,rescale=0,mindiagline = 2,minvertline = 2)
+
+#Represent the plot:
+RP=Results$RP
+RP = matrix(as.numeric(RP), nrow = ncol(RP)) 
+cols = c("white","blue4")
+image(RP, xlab = "", ylab = "", col = cols)
+
+#Save variables from results to seperate variables
+
+RR = Results$RR
+DET = Results$DET
+MAXL = Results$maxL #maximal trajectory
+L = Results$L #mean trajectory
+ENTR = Results$ENTR
+LAM = Results$LAM
+TT = Results$TT
+
+
+#bind
+rqa = data.frame(RR, DET, MAXL, L, ENTR, LAM, TT)
+
+
+
+# RUNNING RQA ON HR
+
+#list you ned for optimizeparam function
+par = list(lgM =  20, steps = seq(1, 6, 1),  radiusspan = 100,  radiussample = 40, normalize = 0,  rescale = 0,  mindiagline = 2,  minvertline = 2,  tw = 0,  whiteline = FALSE,  recpt = FALSE,  fnnpercent = 10,  typeami = "mindip")
+
+#get parameters for rqa
+ans = optimizeParam(d1$HR1, d1$HR2, par, min.rec = 3.5, max.rec = 4.5)
+ans
+
+#try() --> selvom den ikke får en værdi så looper den videre/crasher ikke
+
+#Choose a common value for delay, emb.dim and radius
+#File has to be imported twise since crqa plot compares two timeseries
+Results=crqa (d1$HR1, d1$HR2, delay=26, embed=7, radius=25.47183,normalize=0,rescale=0,mindiagline = 2,minvertline = 2)
+
+#Represent the plot:
+RP=Results$RP
+RP = matrix(as.numeric(RP), nrow = ncol(RP)) 
+cols = c("white","blue4")
+image(RP, xlab = "", ylab = "", col = cols)
+
+#Save variables from results to seperate variables
+
+RR = Results$RR
+DET = Results$DET
+MAXL = Results$maxL #maximal trajectory
+L = Results$L #mean trajectory
+ENTR = Results$ENTR
+LAM = Results$LAM
+TT = Results$TT
+
+#bind
+rqa = data.frame(RR, DET, MAXL, L, ENTR, LAM, TT)
+
+
+
+# - Does this (RQA) tell you more than just eyeballing the plots?
+
+```
+
+
+
+```{r}
+
+#Some functions
+
+
+#downsampling
+downsample = function(x){
+  x%>% 
+  group(n= 100, method= 'greedy') %>%       
+  dplyr::summarise(time= mean(time,na.rm=T),HR1 = mean(HR1,na.rm=T),HR2 = mean(HR2,na.rm=T),Resp1 = mean(Resp1,na.rm=T),Resp2 = mean(Resp2,na.rm=T))
+return(x)}
+
+
+#outliers removal
+removeOuts = function(ts,threshold){
+  ts[ts> (mean(ts, na.rm=T)+
+      (threshold*sd(ts,na.rm=T))) |
+    ts < (mean(ts,na.rm=T) -
+     (threshold*sd(ts,na.rm=T)))] = 
+mean(ts, na.rm=T)
+return(ts)}
+threshold=2.5
+d$HR1 = removeOuts(d$HR1,threshold)
+
+#scaling signals
+scale = function(x){
+x$Resp1S=scale(x$Resp1)  
+x$Resp2S=scale(x$Resp2)  
+x$HR1S=scale(x$HR1) 
+x$HR2S=scale(x$HR2)
+}
+
 
 
 
 ```
+
+
 
 ### Systematically pre-process the data
 - Loop through all the files (either with a loop or with a function), check which files should be excluded, if any, and save the pre-processed time-series. Tip: plot and visually inspect the data to figure out which should be excluded.
@@ -124,6 +247,98 @@ col_HR_plot
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+all_files = list.files(path = "CleanData", full.names = TRUE)
+
+
+study = NULL
+trial = NULL
+group = NULL
+condition = NULL
+rplot = NULL
+hplot= NULL
+n = 1
+
+#læser, scale, downsample, removeout, plot over resp og hr for partc 1 og 2
+
+path<-("C:/Users/Bruger/Desktop/Programming/Semester 3/asm_7/CleanData")
+
+folder = file.path(path)
+
+all_list<- list.files(path = folder, recursive = TRUE)
+
+#Study1_G1_T1_Synchronous
+
+for (i in all_list){
+  
+  list = paste("CleanData/", i, sep = "")
+  x = read.csv(list, header = T)
+  
+  
+  
+  #downsample
+  x = x%>% 
+  group(n= 100, method= 'greedy') %>%       
+  dplyr::summarise(
+    time= mean(time,na.rm=T),
+    HR1 = mean(HR1,na.rm=T),
+    HR2 = mean(HR2,na.rm=T),
+    Resp1 = mean(Resp1,na.rm=T),
+    Resp2 = mean(Resp2,na.rm=T)
+  )
+  
+  #remove outliers
+  x$Resp1 = removeOuts(x$Resp1, threshold)
+  x$Resp2 = removeOuts(x$Resp2, threshold)
+  x$HR1 = removeOuts(x$HR1, threshold)
+  x$HR2 = removeOuts(x$HR2, threshold)
+  
+  
+  #scaling
+  x$Resp1S=scale(x$Resp1)  
+  x$Resp2S=scale(x$Resp2)  
+  x$HR1S=scale(x$HR1) 
+  x$HR2S=scale(x$HR2)
+  
+  hplot[n] = ggplot(x, aes(time, HR1)) + geom_line() + geom_line(aes(time, HR2), color = "red")
+  rplot[n] = ggplot(x, aes(time, Resp1)) + geom_line() + geom_line(aes(time, HR2), color = "blue")
+  
+  
+  
+  assign(paste("HRplot", n, sep = ""), hplot)
+  assign(paste("RSPplot", n, sep = ""), rplot)
+  
+  namefile = paste("Preprocess/preprocess", i, sep = "")
+  
+  write.csv(x, file = namefile)
+  
+  print(n)
+  n = n+1
+  
+  
+  return(rplot)
+  return(hplot)
+  return(x)
+  
+  }
+
+
+data = data.frame(study, trial, group, condition, hplot, rplot)
+
+
+  ID = str_extract(i, "S\\d+")
+  study[n]=str_extract(ID, "\\d+")
+  d=str_extract(i, "G\\d+")
+  group[n] = str_extract(d, "\\d+")
+  t=str_extract(i, "T\\d+")
+  trial[n]=str_extract(t, "\\d+")
+  s=str_extract(i, "\\S")
+  condition[n]=str_extract(s, "\\d+")
+  
+  
+  
+  
+
 ```
 
 ### Creating controls: shuffled controls
