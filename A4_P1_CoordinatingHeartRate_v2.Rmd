@@ -235,19 +235,36 @@ x$HR2S=scale(x$HR2)
 
 
 #rqa function
-r_plot = function(x) {
-par = list(lgM =  50, steps = seq(1, 6, 1),  radiusspan = 100,  radiussample = 40, normalize = 0,  rescale = 0,  mindiagline = 2,  minvertline = 2,  tw = 0,  whiteline = FALSE,  recpt = FALSE,  fnnpercent = 10,  typeami = "mindip")
-ans = optimizeParam(x, x, par, min.rec = 3.5, max.rec = 4.5)
-Results=crqa (x, x, delay=26, embed=7, radius=25.47183,normalize=0,rescale=0,mindiagline = 2,minvertline = 2)
-RP=Results$RP
-RP = matrix(as.numeric(RP), nrow = ncol(RP)) 
-cols = c("white","blue4")
-image(RP, xlab = "", ylab = "", col = cols)
-
-return(ans)
-return(Results)
-return(RP)
-} 
+rqa_func = function(x, y){
+  
+  par = list(lgM =  20, steps = seq(1, 6, 1),  radiusspan = 100,  radiussample = 40, normalize = 0,  rescale = 0,  mindiagline = 2,  minvertline = 2,  tw = 0,  whiteline = FALSE,  recpt = FALSE,  fnnpercent = 10,  typeami = "mindip")
+  
+  
+  param = try(optimizeParam(x, y, par, min.rec = 3.5, max.rec = 4.5))
+  
+  if (length(param)>1){
+    Results = crqa(x, y, delay = param$delay, embed = param$emddim, radius = param$radius, normalize = 0, rescale = 0, mindiagline = 2, minvertlise = 2)
+  }else {
+    Results = NULL
+    param = NULL
+    param$delay = NA
+    param$emddim = NA
+    param$radius = NA
+    Results$RR = NA
+    Results$DET = NA
+    Results$maxL = NA
+    Results$L = NA
+    Results$ENTR = NA
+    Results$LAM = NA
+    Results$TT = NA
+  }
+  
+  
+  df = data.frame(delay = param$delay, embed = param$emddim, radius = param$radius, RR= Results$RR, DET = Results$DET, LMAX = Results$maxL, L = Results$L, ENTR = Results$ENTR, LAM = Results$LAM, TT = Results$TT)
+  
+  return(df)
+  
+}
 
 
 
@@ -365,39 +382,20 @@ for (i in all_list_plot){
 
 
 
-HR_radius = NULL
-HR_delay = NULL
-HR_embed = NULL
+HR_rqa = NULL
 
-Resp_radius = NULL
-Resp_delay = NULL
-Resp_embed = NULL
+Resp_rqa = NULL
+
 
 setwd("C:/Users/Bruger/Desktop/Programming/Semester 3/asm_7/CleanData/Preprocess")
 prep_list = list.files(pattern= ".csv", recursive = TRUE)
 for (i in prep_list){
   x = read_csv(i)
   
-  HR_rqa = try(optimizeParam(x$HR1S, x$HR2S, par, min.rec = 3.5, max.rec = 4.5))
-  if (length(V)>1){
-    HR_radius[1]=HR_rqa$radius
-    HR_delay[1]=HR_rqa$delay
-    HR_embed[1]=HR_rqa$emddim
-  }else{ HR_radius[1] = NA
-  HR_delay[1] = NA
-  HR_embed[1] = NA
-  }
+  HR_rqa = rqa_func(x$HR1S, x$HR2S)
+  Resp_rqa = rqa_func(x$Resp1S, x$Resp2S)
+
   
-  Resp_rqa = try(optimizeParam(x$Resp1S, x$Resp2S, par, min.rec = 3.5, max.rec = 4.5))
-  if (length(V)>1){
-    Resp_radius[1]=Resp_rqa$radius
-    Resp_delay[1]=Resp_rqa$delay
-    Resp_embed[1]=Resp_rqa$emddim
-  }else{ Resp_radius[1] = NA
-  Resp_delay[1] = NA
-  Resp_embed[1] = NA
-  }
-#n = n+1
 }
 
 
@@ -415,6 +413,26 @@ for (i in prep_list){
 
 
 all_data = data.frame(x, radius, delay, embed, result)
+
+
+
+
+
+
+# 
+#   study = substr(i, start = 4, stop = 6)
+#   group = subtr(i, start = 11, stop = 12)
+#   trial = subtr(i, start = 14, stop = 15)
+#   condition = subtr(i, start = 17, stop = 20)
+#   
+#   df = data.frame(study, group, trial, condition, hr_delay = HR$delay, hr_radius = HR$radius, hr_embed = HR$emddim, hr_rr = HR$RR, hr_det = HR$DET, hr_maxl = HR$maxL, hr_L = HR$L, hr_entr = HR$ENTR, hr_lam = HR$LAM, hr_tt = HR$TT, resp_delay = Resp$delay, resp_radius = Resp$radius, resp_embed = Resp$emddim, resp_rr = Resp$RR, Resp_det = Resp$DET, resp_maxl = Resp$maxL, resp_L = Resp$L, resp_entr = Resp$ENTR, resp_lam = Resp$LAM, resp_tt = Resp$TT)
+#   
+#   
+#   if (exists ("dataframe")){dataframe = rbind(dataframe, df)} else {dataframe = df}
+#   
+  
+  
+
 
 ```
 
