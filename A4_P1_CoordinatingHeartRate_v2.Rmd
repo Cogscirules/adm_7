@@ -234,6 +234,22 @@ x$HR2S=scale(x$HR2)
 }
 
 
+#rqa function
+r_plot = function(x) {
+par = list(lgM =  50, steps = seq(1, 6, 1),  radiusspan = 100,  radiussample = 40, normalize = 0,  rescale = 0,  mindiagline = 2,  minvertline = 2,  tw = 0,  whiteline = FALSE,  recpt = FALSE,  fnnpercent = 10,  typeami = "mindip")
+ans = optimizeParam(x, x, par, min.rec = 3.5, max.rec = 4.5)
+Results=crqa (x, x, delay=26, embed=7, radius=25.47183,normalize=0,rescale=0,mindiagline = 2,minvertline = 2)
+RP=Results$RP
+RP = matrix(as.numeric(RP), nrow = ncol(RP)) 
+cols = c("white","blue4")
+image(RP, xlab = "", ylab = "", col = cols)
+
+return(ans)
+return(Results)
+return(RP)
+} 
+
+
 
 
 ```
@@ -268,8 +284,6 @@ folder = file.path(path)
 
 
 #Study1_G1_T1_Synchronous
-
-?paste()
 
 
 
@@ -351,6 +365,56 @@ for (i in all_list_plot){
 
 
 
+HR_radius = NULL
+HR_delay = NULL
+HR_embed = NULL
+
+Resp_radius = NULL
+Resp_delay = NULL
+Resp_embed = NULL
+
+setwd("C:/Users/Bruger/Desktop/Programming/Semester 3/asm_7/CleanData/Preprocess")
+prep_list = list.files(pattern= ".csv", recursive = TRUE)
+for (i in prep_list){
+  x = read_csv(i)
+  
+  HR_rqa = try(optimizeParam(x$HR1S, x$HR2S, par, min.rec = 3.5, max.rec = 4.5))
+  if (length(V)>1){
+    HR_radius[1]=HR_rqa$radius
+    HR_delay[1]=HR_rqa$delay
+    HR_embed[1]=HR_rqa$emddim
+  }else{ HR_radius[1] = NA
+  HR_delay[1] = NA
+  HR_embed[1] = NA
+  }
+  
+  Resp_rqa = try(optimizeParam(x$Resp1S, x$Resp2S, par, min.rec = 3.5, max.rec = 4.5))
+  if (length(V)>1){
+    Resp_radius[1]=Resp_rqa$radius
+    Resp_delay[1]=Resp_rqa$delay
+    Resp_embed[1]=Resp_rqa$emddim
+  }else{ Resp_radius[1] = NA
+  Resp_delay[1] = NA
+  Resp_embed[1] = NA
+  }
+#n = n+1
+}
+
+
+
+
+
+result = NULL
+
+for (i in prep_list){
+  x = read_csv(i)
+  result[n] = crqa(x, x, delay = median($delay), embed = median(df1$embed), radius = median(df1$radius))
+  
+  n = n+1
+}
+
+
+all_data = data.frame(x, radius, delay, embed, result)
 
 ```
 
