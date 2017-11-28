@@ -237,13 +237,13 @@ x$HR2S=scale(x$HR2)
 #rqa function
 rqa_func = function(x, y){
   
-  par = list(lgM =  20, steps = seq(1, 6, 1),  radiusspan = 100,  radiussample = 40, normalize = 0,  rescale = 0,  mindiagline = 2,  minvertline = 2,  tw = 0,  whiteline = FALSE,  recpt = FALSE,  fnnpercent = 10,  typeami = "mindip")
+  par = list(lgM =  20, steps = seq(1, 6, 1),  radiusspan = 100,  radiussample = 40, normalize = 0,  rescale = 0,  mindiagline = 2, minvertline = 2,  tw = 0,  whiteline = FALSE,  recpt = FALSE,  fnnpercent = 10,  typeami = "mindip")
   
   
   param = try(optimizeParam(x, y, par, min.rec = 3.5, max.rec = 4.5))
   
   if (length(param)>1){
-    Results = crqa(x, y, delay = param$delay, embed = param$emddim, radius = param$radius, normalize = 0, rescale = 0, mindiagline = 2, minvertlise = 2)
+    Results = crqa(x, y, delay = param$delay, embed = param$emddim, radius = param$radius, normalize = 0, rescale = 0, mindiagline = 2, minvertline = 2)
   }else {
     Results = NULL
     param = NULL
@@ -284,12 +284,6 @@ knitr::opts_chunk$set(echo = TRUE)
 all_files = list.files(path = "CleanData", full.names = TRUE)
 
 
-study = NULL
-trial = NULL
-group = NULL
-condition = NULL
-rplot = NULL
-hplot= NULL
 n = 1
 
 #læser, scale, downsample, removeout, plot over resp og hr for partc 1 og 2
@@ -382,18 +376,31 @@ for (i in all_list_plot){
 
 
 
+#Run CRQA
+
 HR_rqa = NULL
 
 Resp_rqa = NULL
 
+df = NULL
 
 setwd("C:/Users/Bruger/Desktop/Programming/Semester 3/asm_7/CleanData/Preprocess")
 prep_list = list.files(pattern= ".csv", recursive = TRUE)
 for (i in prep_list){
-  x = read_csv(i)
+  x = read.csv(i)
   
   HR_rqa = rqa_func(x$HR1S, x$HR2S)
   Resp_rqa = rqa_func(x$Resp1S, x$Resp2S)
+  
+  study = substr(i, start = 4, stop = 6)
+  group = substr(i, start = 11, stop = 12)
+  trial = substr(i, start = 14, stop = 15)
+  condition = substr(i, start = 17, stop = 20)
+
+  df = data.frame(study, group, trial, condition, hr_delay = HR_rqa$delay, hr_radius = HR_rqa$radius, hr_embed = HR_rqa$emddim, hr_rr = HR_rqa$RR, hr_det = HR_rqa$DET, hr_maxl = HR_rqa$maxL, hr_L = HR_rqa$L, hr_entr = HR_rqa$ENTR, hr_lam = HR_rqa$LAM, hr_tt = HR_rqa$TT, resp_delay = Resp_rqa$delay, resp_radius = Resp_rqa$radius, resp_embed = Resp_rqa$emddim, resp_rr = Resp_rqa$RR, Resp_det = Resp_rqa$DET, resp_maxl = Resp_rqa$maxL, resp_L = Resp_rqa$L, resp_entr = Resp_rqa$ENTR, resp_lam = Resp_rqa$LAM, resp_tt = Resp_rqa$TT)
+
+
+  if (exists ("dataframe")){dataframe = rbind(dataframe, df)} else {dataframe = df}
 
   
 }
@@ -405,8 +412,8 @@ for (i in prep_list){
 result = NULL
 
 for (i in prep_list){
-  x = read_csv(i)
-  result[n] = crqa(x, x, delay = median($delay), embed = median(df1$embed), radius = median(df1$radius))
+  x = read.csv(i)
+  result[n] = crqa(x, x, delay = median(x$delay), embed = median(x$embed), radius = median(x$radius))
   
   n = n+1
 }
@@ -420,15 +427,15 @@ all_data = data.frame(x, radius, delay, embed, result)
 
 
 # 
-#   study = substr(i, start = 4, stop = 6)
-#   group = subtr(i, start = 11, stop = 12)
-#   trial = subtr(i, start = 14, stop = 15)
-#   condition = subtr(i, start = 17, stop = 20)
-#   
-#   df = data.frame(study, group, trial, condition, hr_delay = HR$delay, hr_radius = HR$radius, hr_embed = HR$emddim, hr_rr = HR$RR, hr_det = HR$DET, hr_maxl = HR$maxL, hr_L = HR$L, hr_entr = HR$ENTR, hr_lam = HR$LAM, hr_tt = HR$TT, resp_delay = Resp$delay, resp_radius = Resp$radius, resp_embed = Resp$emddim, resp_rr = Resp$RR, Resp_det = Resp$DET, resp_maxl = Resp$maxL, resp_L = Resp$L, resp_entr = Resp$ENTR, resp_lam = Resp$LAM, resp_tt = Resp$TT)
-#   
-#   
-#   if (exists ("dataframe")){dataframe = rbind(dataframe, df)} else {dataframe = df}
+  # study = substr(i, start = 4, stop = 6)
+  # group = subtr(i, start = 11, stop = 12)
+  # trial = subtr(i, start = 14, stop = 15)
+  # condition = subtr(i, start = 17, stop = 20)
+  # 
+  # df = data.frame(study, group, trial, condition, hr_delay = HR$delay, hr_radius = HR$radius, hr_embed = HR$emddim, hr_rr = HR$RR, hr_det = HR$DET, hr_maxl = HR$maxL, hr_L = HR$L, hr_entr = HR$ENTR, hr_lam = HR$LAM, hr_tt = HR$TT, resp_delay = Resp$delay, resp_radius = Resp$radius, resp_embed = Resp$emddim, resp_rr = Resp$RR, Resp_det = Resp$DET, resp_maxl = Resp$maxL, resp_L = Resp$L, resp_entr = Resp$ENTR, resp_lam = Resp$LAM, resp_tt = Resp$TT)
+  # 
+  # 
+  # if (exists ("dataframe")){dataframe = rbind(dataframe, df)} else {dataframe = df}
 #   
   
   
